@@ -51,16 +51,14 @@ function parsePandocToCitation(mention:string){
 };
 
 /* ==================== */
-var styleID = "apa";
 
-async function fetchCSL(styleID:string) {
+type CSLStyleID = "apa";
+async function fetchCSLStyle(styleID: CSLStyleID) {
 	const response = await fetch(`https://raw.githubusercontent.com/citation-style-language/styles/master/${styleID}.csl`);
 	const csl = await response.text();
 	return csl;
 }
 
-const style = await fetchCSL(styleID);
-console.assert(style?true:false);
 
 // Initialize a system object, which contains two methods needed by the
 // engine.
@@ -70,7 +68,7 @@ var xhr = new XMLHttpRequest();
 // Given the identifier of a CSL style, this function instantiates a CSL.Engine
 // object that can render citations in that style.
 
-function getProcessor(references: ReferenceItem[]) {
+function getProcessor(references: ReferenceItem[], style:string) {
 	// Instantiate and return the engine
 	var citeproc = new CSL.Engine({
 		retrieveLocale: function (lang:string) {
@@ -103,16 +101,8 @@ type Bibliography = [
 	string[]
 ];
 
-
-// function getCiteCluster(source:string, references:ReferenceItem[]){
-// 	var citeproc = getProcessor(references);
-// 	var citationsPre = [ ["adolph.etal_2014", 1] ];
-// 	var citationsPost = [ ["adolph.etal_2014", 1] ];
-// 	var result = citeproc.processCitationCluster(citations[0], [], []);
-// }
-
-function getBibliography(references:ReferenceItem[]) {
-	var citeproc = getProcessor(references);
+function getBibliography(references:ReferenceItem[], style:string) {
+	var citeproc = getProcessor(references, style);
 	// var citationsPre = [ ["adolph.etal_2014", 1] ];
 	// var citationsPost = [ ["adolph.etal_2014", 1] ];
 	// var result = citeproc.processCitationCluster(citations[0], [], []);
@@ -126,12 +116,38 @@ export type {ReferenceItem,
             CitationItem, 
             Bibliography, 
             FormattingParameters};
-export {fetchReferences, getBibliography};
+
+
+
+export {fetchReferences, 
+	fetchCSLStyle,
+	getBibliography};
 
 async function example(){
-    const references:ReferenceItem[] = await fetchReferences("./ref.bib");
+	const styleID = "apa";
+    const [references, style] = await Promise.all([await fetchReferences("./ref.bib"), await fetchCSLStyle(styleID)]);
     console.log("references:", references);
-    const bibliography = getBibliography(references);
+	// console.log("style:", style);
+
+	// get bibliography
+    const bibliography = getBibliography(references, style);
     console.log("bibliography:", bibliography);
+
+	// footnote and intext citations
+	var citationsPre = [ ["citation-quaTheb4", 1], ["citation-mileiK4k", 2] ];
+	var citationsPost = [ ["citation-adaNgoh1", 4] ];
+	
+	var citeproc = getProcessor(references, style);
+	const citation = citeproc.processCitationCluster({
+		citationItems: [
+			{id: 'sacks_2022'}
+		],
+		properties: {
+			noteIndex:1
+		}
+	}, [], []);
+	console.log("citation:", citation)
+
+	// const citations = getCitationCluster(citations, references);
 }
 export {example};

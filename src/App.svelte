@@ -4,18 +4,9 @@
 _A férfi, aki kalapnak nézte a feleségét_ és az _Antropológus a Marson_ című 
 könyveiben pácienseinek különös neurológiai zavaraival foglalkozik.
 `
-import {example, fetchReferences, getBibliography} from "./bibliography"
+import {example, fetchCSLStyle, fetchReferences, getBibliography, type Citation} from "./bibliography"
 
-const references = fetchReferences("./ref.bib");
-
-// async function fetchBibliography(){
-	
-//     console.log("references:", references);
-//     const bibliography = getBibliography(references);
-//     console.log("bibliography:", bibliography);
-// 	return bibliography;
-// }
-
+example()
 
 </script>
 
@@ -24,12 +15,22 @@ const references = fetchReferences("./ref.bib");
 	<div>
 		{@html marked(source)}
 	</div>
+	<div>
+		<h2>Citations</h2>
+		<!-- {#await Promise.all([fetchReferences("./ref.bib"), fetchCSLStyle("apa")])}
+			<p>...loading</p>
+		{:then [references, style]}
+
+		{:catch error}
+			<p style="color: red">{error.message}</p>
+		{/await} -->
+	</div>
 	<div id="bibliography">
 		<h2>Bibliography</h2>
-		{#await fetchReferences("./ref.bib")}
+		{#await Promise.all([fetchReferences("./ref.bib"), fetchCSLStyle("apa")])}
 			<p>...loading</p>
-		{:then references}
-			{#each getBibliography(references)[1] as item}
+		{:then [references, style]}
+			{#each getBibliography(references, style)[1] as item}
 				{@html item}
 			{/each}
 		{:catch error}
